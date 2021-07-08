@@ -11,6 +11,7 @@ import hello.servlet.web.frontcontroller.v4.controller.MemberFormControllerV4;
 import hello.servlet.web.frontcontroller.v4.controller.MemberListControllerV4;
 import hello.servlet.web.frontcontroller.v4.controller.MemberSaveControllerV4;
 import hello.servlet.web.frontcontroller.v5.adapter.ControllerV32HandlerAdapter;
+import hello.servlet.web.frontcontroller.v5.adapter.ControllerV4HandlerAdapter;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -39,21 +40,25 @@ public class FrontControllerServletV5 extends HttpServlet {
         handlerMappingMap.put("/front-controller/v5/v32/members/new-form",new MemberFormControllerV32());
         handlerMappingMap.put("/front-controller/v5/v32/members/save",new MemberSaveControllerV32());
         handlerMappingMap.put("/front-controller/v5/v32/members",new MemberListControllerV32());
+        //v4 추가
+        handlerMappingMap.put("/front-controller/v5/v4/members/new-form",new MemberFormControllerV4());
+        handlerMappingMap.put("/front-controller/v5/v4/members/save",new MemberSaveControllerV4());
+        handlerMappingMap.put("/front-controller/v5/v4/members",new MemberListControllerV4());
     }
     private void initHandlerAdapters() {
-        handlerAdapters.add(new ControllerV32HandlerAdapter());//MyHandlerAdapter 구현체
+        handlerAdapters.add(new ControllerV32HandlerAdapter());//MyHandlerAdapter 구현체로 ControllerV32 추가!
+        handlerAdapters.add(new ControllerV4HandlerAdapter());//MyHandlerAdapter 구현체로 ControllerV4 추가!
     }
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        //URI 맵핑하고 그에 따른 객체 리턴하는 함수로 구현!
-        //코드가 깔끔해진다! 아 handler를 찾는구나!
-        Object handler = getHandler(req);//핸들러 찾아와.MemberFormControllerV32반환.
+        //handler = MemberFormControllerV4
+        Object handler = getHandler(req);
         if(handler == null){
             res.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        MyHandlerAdapter adapter = getHandlerAdapter(handler);//핸들러 어댑터 찾아와.
+        MyHandlerAdapter adapter = getHandlerAdapter(handler);//adapter = ControllerV4HandlerAdapter
         ModelView mv = adapter.handle(req, res, handler);//실제 컨트롤러 호출해서 ModelView 반환.
 
         String viewName = mv.getViewName();
@@ -61,10 +66,10 @@ public class FrontControllerServletV5 extends HttpServlet {
         view.render(mv.getModel(),req,res);
     }
 
-    private MyHandlerAdapter getHandlerAdapter(Object handler) {//핸들러로 V32가 들어오면
-        //handler = MemberFormControllerV32
+    private MyHandlerAdapter getHandlerAdapter(Object handler) {
+        //handler = MemberFormControllerV4
         for (MyHandlerAdapter adapter : handlerAdapters) {//리스트 다 뒤진다.
-            if(adapter.supports(handler)){//V32가 있으면 support는 지원할 수 있으므로 true리턴
+            if(adapter.supports(handler)){//Controller3Adapter 먼저 검사하고, 조건 불충족하면 다음 Controller4Adapter 조건 검사
                 return adapter;//MyHandlerAdapter adapter를 리턴한다!
             }
         }
