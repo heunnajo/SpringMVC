@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 //front-controller/v3/members/new-form
@@ -28,34 +29,30 @@ public class FrontControllerServletV3 extends HttpServlet {
         controllerMap.put("/front-controller/v3/members/new-form",new MemberFormControllerV3());
         controllerMap.put("/front-controller/v3/members/save",new MemberSaveControllerV3());
         controllerMap.put("/front-controller/v3/members",new MemberListControllerV3());
-
     }
-
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-        String requestURI = req.getRequestURI();// 이것은 /front-controller/v2/members/new-form와 같다
+        //1.맵핑
+        String requestURI = req.getRequestURI();
         ControllerV3 controller = controllerMap.get(requestURI);
         if(controller == null){
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            PrintWriter w = resp.getWriter();
+            resp.setContentType("text/html");
+            resp.setCharacterEncoding("utf-8");
+            w.write("Map에 매칭되는 컨트롤러가 없습니다");
+            //resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        //paramMap을 넘겨줘야한다!
-        //모든 파라미터 데이터 다 가져온다.
         Map<String,String> paramMap = createParamMap(req);
+        ModelView mv = controller.process(paramMap);
 
-        ModelView mv = controller.process(paramMap);//MyView가 리턴된다!
-        String viewName = mv.getViewName();//mv.getViewName();mv로는 new-form 같은 논리이름만 얻을 수 있다.
-        //"WEB-INF/views/new-form.jsp"
-        //MyView view = new MyView("WEB-INF/views/" + viewName + ".jsp");
+        String viewName = mv.getViewName();
         MyView view = viewResolver(viewName);//논리이름->물리이름으로 매치시켜주고, 뷰를 렌더링한다.
         view.render(mv.getModel(),req,resp);
     }
-
     private MyView viewResolver(String viewName) {
         return new MyView("WEB-INF/views/" + viewName + ".jsp");
     }
-
     private Map<String, String> createParamMap(HttpServletRequest req) {
         Map<String,String> paramMap = new HashMap<>();
         req.getParameterNames().asIterator()
